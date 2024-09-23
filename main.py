@@ -36,6 +36,7 @@ def get_landmarks():
     
     # Get selected categories from the request
     selected_categories = request.args.get('categories', '').split(',')
+    selected_categories = [cat for cat in selected_categories if cat]  # Remove empty strings
     logging.debug(f"Selected categories: {selected_categories}")
 
     # Add debug logging for bounding box coordinates
@@ -82,12 +83,11 @@ def get_landmarks():
             
             # Check if the landmark is within the specified bounding box with buffer
             if (south - buffer) <= landmark['lat'] <= (north + buffer) and (west - buffer) <= landmark['lon'] <= (east + buffer):
-                # Only add the landmark if its category is in the selected categories or if no categories are selected
-                if not selected_categories or landmark['category'] in selected_categories:
+                if not selected_categories or landmark['category'] in selected_categories or (landmark['category'] == "Other" and "Other" in selected_categories):
                     landmarks.append(landmark)
                     logging.debug(f"Added landmark: {landmark['title']}")
                 else:
-                    logging.debug(f"Skipped landmark {landmark['title']} due to category filter")
+                    logging.debug(f"Skipped landmark {landmark['title']} due to category filter. Landmark category: {landmark['category']}, Selected categories: {selected_categories}")
             else:
                 logging.debug(f"Skipped landmark {landmark['title']} as it's outside the bounding box")
 

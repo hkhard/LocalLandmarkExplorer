@@ -31,20 +31,22 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const categoryIcons = {
-        "Historical": { icon: "fa-landmark", color: "#FFA500" },
-        "Cultural": { icon: "fa-palette", color: "#FF69B4" },
-        "Natural": { icon: "fa-leaf", color: "#008000" },
-        "Educational": { icon: "fa-graduation-cap", color: "#4B0082" },
-        "Religious": { icon: "fa-place-of-worship", color: "#800080" },
-        "Commercial": { icon: "fa-store", color: "#1E90FF" },
-        "Other": { icon: "fa-map-marker-alt", color: "#808080" }
+        "Historical": { icon: "fa-landmark", color: "#FF0000" },
+        "Cultural": { icon: "fa-palette", color: "#00FF00" },
+        "Natural": { icon: "fa-leaf", color: "#0000FF" },
+        "Educational": { icon: "fa-graduation-cap", color: "#FFFF00" },
+        "Religious": { icon: "fa-place-of-worship", color: "#FF00FF" },
+        "Commercial": { icon: "fa-store", color: "#00FFFF" },
+        "Other": { icon: "fa-map-marker-alt", color: "#FFFFFF" }
     };
 
     const createCustomIcon = (category) => {
-        const { icon, color } = categoryIcons[category] || categoryIcons["Other"];
+        const { color } = categoryIcons[category] || categoryIcons["Other"];
         return L.divIcon({
-            html: `<i class="fas ${icon} fa-2x" style="color: ${color};"></i>`,
-            iconSize: [24, 24],
+            html: `<div class="pin" style="background-color: ${color};"></div>`,
+            iconSize: [30, 30],
+            iconAnchor: [15, 30],
+            popupAnchor: [0, -30],
             className: 'custom-icon'
         });
     };
@@ -84,7 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
         landmarks.forEach(landmark => {
             console.log(`Creating marker for ${landmark.title}: lat ${landmark.lat}, lon ${landmark.lon}, category ${landmark.category}`);
             const marker = L.marker([landmark.lat, landmark.lon], {icon: createCustomIcon(landmark.category)}).addTo(map);
-            marker.bindPopup(`<b>${landmark.title}</b><br>${landmark.summary}<br><i>Category: ${landmark.category}</i>`);
+            marker.bindPopup(`
+                <b>${landmark.title}</b><br>
+                ${landmark.summary}<br>
+                <i class="fas ${categoryIcons[landmark.category].icon}" style="color: ${categoryIcons[landmark.category].color};"></i> ${landmark.category}
+            `);
             markers.push(marker);
         });
     };

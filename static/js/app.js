@@ -8,10 +8,20 @@ document.addEventListener('DOMContentLoaded', () => {
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
+    let markers = [];
+
     // Function to fetch landmarks
     const fetchLandmarks = async () => {
+        const bounds = map.getBounds();
+        const params = new URLSearchParams({
+            north: bounds.getNorth(),
+            south: bounds.getSouth(),
+            east: bounds.getEast(),
+            west: bounds.getWest()
+        });
+
         try {
-            const response = await fetch('/get_landmarks');
+            const response = await fetch(`/get_landmarks?${params}`);
             const landmarks = await response.json();
             displayLandmarks(landmarks);
         } catch (error) {
@@ -21,13 +31,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to display landmarks on the map
     const displayLandmarks = (landmarks) => {
+        // Clear existing markers
+        markers.forEach(marker => map.removeLayer(marker));
+        markers = [];
+
         landmarks.forEach(landmark => {
             const marker = L.marker([landmark.lat, landmark.lon]).addTo(map);
             marker.bindPopup(`<b>${landmark.title}</b><br>${landmark.summary}`);
+            markers.push(marker);
         });
     };
 
-    // Fetch landmarks when the map is moved
+    // Fetch landmarks when the map is moved or zoomed
     map.on('moveend', fetchLandmarks);
 
     // Initial fetch of landmarks

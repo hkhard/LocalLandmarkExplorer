@@ -3,23 +3,17 @@ import requests
 import logging
 import json
 from functools import lru_cache
-from datetime import datetime, timedelta
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-# In-memory cache configuration
-CACHE_EXPIRATION = timedelta(hours=1)
-
 @lru_cache(maxsize=100)
-def get_cached_landmarks(cache_key, timestamp):
-    # This function will be automatically memoized by lru_cache
+def get_cached_landmarks(cache_key):
     return None
 
 def set_cached_landmarks(cache_key, data):
-    # Update the cache with new data
     get_cached_landmarks.cache_clear()
-    get_cached_landmarks(cache_key, datetime.now().timestamp())
+    get_cached_landmarks(cache_key)
     return data
 
 def categorize_landmark(description):
@@ -68,13 +62,10 @@ def get_landmarks():
     cache_key = f"landmarks:{center_lat}:{center_lon}:{search_query}:{is_specific_landmark}"
 
     # Try to get data from cache
-    cached_data = get_cached_landmarks(cache_key, datetime.now().timestamp())
+    cached_data = get_cached_landmarks(cache_key)
     if cached_data is not None:
-        # Check if the cached data is still valid
-        cache_timestamp = datetime.fromtimestamp(cached_data[1])
-        if datetime.now() - cache_timestamp < CACHE_EXPIRATION:
-            logging.debug("Returning data from cache")
-            return jsonify(cached_data[0])
+        logging.debug("Returning data from cache")
+        return jsonify(cached_data)
 
     url = f"https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord={center_lat}|{center_lon}&gsradius=10000&gslimit=50&format=json"
     
@@ -127,13 +118,18 @@ def get_landmarks():
         logging.debug(f"Returning {len(landmarks)} landmarks")
 
         # Cache the results
-        set_cached_landmarks(cache_key, (landmarks, datetime.now().timestamp()))
+        set_cached_landmarks(cache_key, landmarks)
 
         return jsonify(landmarks)
     
     except requests.exceptions.RequestException as e:
         logging.error(f"Error fetching data from Wikipedia API: {e}")
         return jsonify([])
+
+@app.route('/clear_cache')
+def clear_cache():
+    get_cached_landmarks.cache_clear()
+    return jsonify({"message": "Cache cleared"})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

@@ -38,16 +38,21 @@ def get_landmarks():
     selected_categories = request.args.get('categories', '').split(',')
     logging.debug(f"Selected categories: {selected_categories}")
 
+    # Add debug logging for bounding box coordinates
+    logging.debug(f"Bounding box: North: {north}, South: {south}, East: {east}, West: {west}")
+
     center_lat = (north + south) / 2
     center_lon = (east + west) / 2
 
-    url = f"https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord={center_lat}|{center_lon}&gsradius=10000&gslimit=50&format=json"
+    # Increase the radius to fetch landmarks from a larger area
+    url = f"https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord={center_lat}|{center_lon}&gsradius=20000&gslimit=50&format=json"
     response = requests.get(url)
     data = response.json()
 
     logging.debug(f"Raw Wikipedia API response: {data}")
 
     landmarks = []
+    buffer = 0.1  # Add a buffer to make the bounding box check more lenient
     for place in data['query']['geosearch']:
         landmark = {
             "title": place['title'],
@@ -65,8 +70,8 @@ def get_landmarks():
         landmark['category'] = categorize_landmark(extract)
         logging.debug(f"Categorized {landmark['title']} as {landmark['category']}")
         
-        # Check if the landmark is within the specified bounding box
-        if south <= landmark['lat'] <= north and west <= landmark['lon'] <= east:
+        # Check if the landmark is within the specified bounding box with buffer
+        if (south - buffer) <= landmark['lat'] <= (north + buffer) and (west - buffer) <= landmark['lon'] <= (east + buffer):
             # Only add the landmark if its category is in the selected categories or if no categories are selected
             if not selected_categories or landmark['category'] in selected_categories:
                 landmarks.append(landmark)

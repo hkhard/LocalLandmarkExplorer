@@ -228,8 +228,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(response => response.json())
                 .then(data => {
                     if (data.length > 0) {
-                        const { lat, lon } = data[0];
-                        map.setView([lat, lon], 13);
+                        const { lat, lon, boundingbox } = data[0];
+                        const southWest = L.latLng(boundingbox[0], boundingbox[2]);
+                        const northEast = L.latLng(boundingbox[1], boundingbox[3]);
+                        const bounds = L.latLngBounds(southWest, northEast);
+                        
+                        map.fitBounds(bounds);
                         fetchLandmarks(searchQuery, { lat, lng: lon }).then(() => {
                             if (markers.length > 0) {
                                 const group = new L.featureGroup(markers);

@@ -44,8 +44,8 @@ def get_landmarks():
     center_lat = (north + south) / 2
     center_lon = (east + west) / 2
 
-    # Increase the radius to fetch landmarks from a larger area
-    url = f"https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord={center_lat}|{center_lon}&gsradius=20000&gslimit=50&format=json"
+    # Updated gsradius value to 10000
+    url = f"https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord={center_lat}|{center_lon}&gsradius=10000&gslimit=50&format=json"
     
     logging.debug(f"Sending request to Wikipedia API: {url}")
     

@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const landmarks = await response.json();
             console.log('Fetched landmarks:', landmarks);
             displayLandmarks(landmarks);
+            filterLandmarks(); // Add this line
         } catch (error) {
             console.error('Error fetching landmarks:', error);
             showError('Failed to fetch landmarks. Please try again later.');
@@ -94,7 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `);
             markers.push(marker);
         });
-        filterLandmarks();
     };
 
     const debounceFetchLandmarks = () => {
@@ -126,10 +126,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 filterLandmarks();
             });
         });
+        
+        // Call filterLandmarks initially to show all categories
+        filterLandmarks();
     };
 
     const filterLandmarks = () => {
-        const enabledCategories = Array.from(document.querySelectorAll('.legend-item:not(.disabled)'))
+        const enabledCategories = Array.from(document.querySelectorAll('.legend-item'))
+            .filter(item => !item.classList.contains('disabled'))
             .map(item => item.dataset.category);
         
         markers.forEach(marker => {

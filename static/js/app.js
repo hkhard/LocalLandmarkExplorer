@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const landmarks = await response.json();
             console.log('Fetched landmarks:', landmarks);
             displayLandmarks(landmarks);
-            filterLandmarks(); // Add this line
+            // Remove the filterLandmarks() call from here
         } catch (error) {
             console.error('Error fetching landmarks:', error);
             showError('Failed to fetch landmarks. Please try again later.');
@@ -110,32 +110,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const div = L.DomUtil.create('div', 'info legend');
             div.innerHTML = '<h4>Landmark Categories</h4>';
             for (const [category, { icon, color }] of Object.entries(categoryIcons)) {
-                div.innerHTML += `<div class="legend-item" data-category="${category}">
-                    <i class="fas ${icon}" style="color: ${color};"></i> ${category}
-                </div>`;
+                div.innerHTML += `
+                    <div class="legend-item" data-category="${category}">
+                        <input type="checkbox" id="${category}" checked>
+                        <label for="${category}">
+                            <i class="fas ${icon}" style="color: ${color};"></i> ${category}
+                        </label>
+                    </div>`;
             }
             return div;
         };
         legend.addTo(map);
         
-        // Add click event listeners to legend items
-        document.querySelectorAll('.legend-item').forEach(item => {
-            item.addEventListener('click', () => {
-                item.classList.toggle('disabled');
+        // Add change event listeners to checkboxes
+        document.querySelectorAll('.legend-item input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
                 filterLandmarks();
             });
         });
     };
 
     const filterLandmarks = () => {
-        const enabledCategories = Array.from(document.querySelectorAll('.legend-item:not(.disabled)'))
-            .map(item => item.dataset.category);
-        
-        // If all categories are disabled, enable all of them
-        if (enabledCategories.length === 0) {
-            document.querySelectorAll('.legend-item').forEach(item => item.classList.remove('disabled'));
-            enabledCategories.push(...Object.keys(categoryIcons));
-        }
+        const enabledCategories = Array.from(document.querySelectorAll('.legend-item input[type="checkbox"]:checked'))
+            .map(checkbox => checkbox.id);
         
         markers.forEach(marker => {
             const category = marker.options.category;
@@ -148,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     createLegend();
-    fetchLandmarks();
+    fetchLandmarks(); // Call this immediately after creating the map
 
     // New function to calculate midpoint
     const calculateMidpoint = (userLat, userLon, landmarksLat, landmarksLon) => {

@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const initialLandmarksLat = 59.2753; // Örebro, Sweden
                     const initialLandmarksLon = 15.2134;
                     const midpoint = calculateMidpoint(latitude, longitude, initialLandmarksLat, initialLandmarksLon);
-                    map.setView(midpoint, 10); // Adjust zoom level as needed
+                    map.setView(midpoint, 13); // Increased zoom level from 10 to 13
                     L.marker([latitude, longitude], {
                         icon: L.divIcon({
                             html: '<i class="fas fa-user fa-2x" style="color: #4a69bd;"></i>',

@@ -2,10 +2,16 @@ from flask import Flask, render_template, jsonify, request
 import requests
 import logging
 import json
+import hashlib
+import pickle
 from functools import lru_cache
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
+
+def generate_cache_key(params):
+    param_string = json.dumps(params, sort_keys=True)
+    return hashlib.md5(param_string.encode()).hexdigest()
 
 @lru_cache(maxsize=100)
 def get_cached_landmarks(cache_key):
@@ -14,7 +20,7 @@ def get_cached_landmarks(cache_key):
 def set_cached_landmarks(cache_key, data):
     get_cached_landmarks.cache_clear()
     get_cached_landmarks(cache_key)
-    return data
+    return pickle.dumps(data)
 
 def categorize_landmark(description):
     categories = {
@@ -38,39 +44,43 @@ def index():
 
 @app.route('/get_landmarks')
 def get_landmarks():
-    lat = request.args.get('lat')
-    lon = request.args.get('lon')
-    search_query = request.args.get('search', '').strip()
-    is_specific_landmark = request.args.get('specific', 'false').lower() == 'true'
+    params = {
+        'lat': request.args.get('lat'),
+        'lon': request.args.get('lon'),
+        'search': request.args.get('search', '').strip(),
+        'specific': request.args.get('specific', 'false').lower() == 'true',
+        'north': request.args.get('north'),
+        'south': request.args.get('south'),
+        'east': request.args.get('east'),
+        'west': request.args.get('west')
+    }
 
-    if lat and lon:
-        center_lat = float(lat)
-        center_lon = float(lon)
+    cache_key = generate_cache_key(params)
+    cached_data = get_cached_landmarks(cache_key)
+
+    if cached_data is not None:
+        logging.debug("Returning data from cache")
+        return jsonify(pickle.loads(cached_data))
+
+    if params['lat'] and params['lon']:
+        center_lat = float(params['lat'])
+        center_lon = float(params['lon'])
     else:
-        north = float(request.args.get('north', 59.2753))
-        south = float(request.args.get('south', 59.2753))
-        east = float(request.args.get('east', 15.2134))
-        west = float(request.args.get('west', 15.2134))
+        north = float(params['north'] or 59.2753)
+        south = float(params['south'] or 59.2753)
+        east = float(params['east'] or 15.2134)
+        west = float(params['west'] or 15.2134)
         center_lat = (north + south) / 2
         center_lon = (east + west) / 2
 
-    logging.debug(f"Search query: {search_query}")
-    logging.debug(f"Is specific landmark: {is_specific_landmark}")
+    logging.debug(f"Search query: {params['search']}")
+    logging.debug(f"Is specific landmark: {params['specific']}")
     logging.debug(f"Center coordinates: Lat: {center_lat}, Lon: {center_lon}")
-
-    # Generate a cache key based on the request parameters
-    cache_key = f"landmarks:{center_lat}:{center_lon}:{search_query}:{is_specific_landmark}"
-
-    # Try to get data from cache
-    cached_data = get_cached_landmarks(cache_key)
-    if cached_data is not None:
-        logging.debug("Returning data from cache")
-        return jsonify(cached_data)
 
     url = f"https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord={center_lat}|{center_lon}&gsradius=10000&gslimit=50&format=json"
     
-    if search_query:
-        url += f"&gsearch={search_query}"
+    if params['search']:
+        url += f"&gsearch={params['search']}"
     
     logging.debug(f"Sending request to Wikipedia API: {url}")
     
@@ -96,7 +106,7 @@ def get_landmarks():
             }
             logging.debug(f"Processing landmark: {landmark['title']}")
 
-            if is_specific_landmark and search_query.lower() != landmark['title'].lower():
+            if params['specific'] and params['search'].lower() != landmark['title'].lower():
                 logging.debug(f"Skipped landmark {landmark['title']} as it's not an exact match")
                 continue
 
@@ -111,8 +121,8 @@ def get_landmarks():
             landmarks.append(landmark)
             logging.debug(f"Added landmark: {landmark['title']}")
 
-        if is_specific_landmark and len(landmarks) == 0:
-            logging.debug(f"No exact match found for specific landmark search: {search_query}")
+        if params['specific'] and len(landmarks) == 0:
+            logging.debug(f"No exact match found for specific landmark search: {params['search']}")
             return jsonify([])
 
         logging.debug(f"Returning {len(landmarks)} landmarks")

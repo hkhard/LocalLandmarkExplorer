@@ -2,15 +2,25 @@ from flask import Flask, render_template, jsonify, request
 import requests
 import logging
 import json
-from redis import Redis
-from datetime import timedelta
+from functools import lru_cache
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-# Set up Redis connection
-redis_client = Redis(host='localhost', port=6379, db=0)
+# In-memory cache configuration
 CACHE_EXPIRATION = timedelta(hours=1)
+
+@lru_cache(maxsize=100)
+def get_cached_landmarks(cache_key, timestamp):
+    # This function will be automatically memoized by lru_cache
+    return None
+
+def set_cached_landmarks(cache_key, data):
+    # Update the cache with new data
+    get_cached_landmarks.cache_clear()
+    get_cached_landmarks(cache_key, datetime.now().timestamp())
+    return data
 
 def categorize_landmark(description):
     categories = {
@@ -58,10 +68,13 @@ def get_landmarks():
     cache_key = f"landmarks:{center_lat}:{center_lon}:{search_query}:{is_specific_landmark}"
 
     # Try to get data from cache
-    cached_data = redis_client.get(cache_key)
-    if cached_data:
-        logging.debug("Returning data from cache")
-        return jsonify(json.loads(cached_data))
+    cached_data = get_cached_landmarks(cache_key, datetime.now().timestamp())
+    if cached_data is not None:
+        # Check if the cached data is still valid
+        cache_timestamp = datetime.fromtimestamp(cached_data[1])
+        if datetime.now() - cache_timestamp < CACHE_EXPIRATION:
+            logging.debug("Returning data from cache")
+            return jsonify(cached_data[0])
 
     url = f"https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord={center_lat}|{center_lon}&gsradius=10000&gslimit=50&format=json"
     
@@ -114,7 +127,7 @@ def get_landmarks():
         logging.debug(f"Returning {len(landmarks)} landmarks")
 
         # Cache the results
-        redis_client.setex(cache_key, CACHE_EXPIRATION, json.dumps(landmarks))
+        set_cached_landmarks(cache_key, (landmarks, datetime.now().timestamp()))
 
         return jsonify(landmarks)
     

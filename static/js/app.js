@@ -56,15 +56,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const fetchLandmarks = async (searchQuery = '') => {
-        const bounds = map.getBounds();
-        const params = new URLSearchParams({
-            north: bounds.getNorth(),
-            south: bounds.getSouth(),
-            east: bounds.getEast(),
-            west: bounds.getWest(),
-            search: searchQuery
-        });
+    const fetchLandmarks = async (searchQuery = '', center = null) => {
+        let params;
+        if (center) {
+            params = new URLSearchParams({
+                lat: center.lat,
+                lon: center.lng,
+                search: searchQuery
+            });
+        } else {
+            const bounds = map.getBounds();
+            params = new URLSearchParams({
+                north: bounds.getNorth(),
+                south: bounds.getSouth(),
+                east: bounds.getEast(),
+                west: bounds.getWest(),
+                search: searchQuery
+            });
+        }
 
         showLoading();
         hideError();
@@ -214,13 +223,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const performSearch = () => {
         const searchQuery = searchInput.value.trim();
         if (searchQuery) {
-            fetchLandmarks(searchQuery).then(() => {
-                // After fetching landmarks, fit the map to the bounds of all markers
-                if (markers.length > 0) {
-                    const group = new L.featureGroup(markers);
-                    map.fitBounds(group.getBounds());
-                }
-            });
+            // Use OpenStreetMap Nominatim for geocoding
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        const { lat, lon } = data[0];
+                        map.setView([lat, lon], 13);
+                        fetchLandmarks(searchQuery, { lat, lng: lon }).then(() => {
+                            if (markers.length > 0) {
+                                const group = new L.featureGroup(markers);
+                                map.fitBounds(group.getBounds());
+                            }
+                        });
+                    } else {
+                        showError('Location not found. Please try a different search term.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error during geocoding:', error);
+                    showError('Failed to search for the location. Please try again later.');
+                });
             slideoutDrawer.classList.remove('expanded');
         }
     };

@@ -28,11 +28,18 @@ def index():
 
 @app.route('/get_landmarks')
 def get_landmarks():
-    # Updated default coordinates to Örebro, Sweden
-    north = float(request.args.get('north', 59.2753))
-    south = float(request.args.get('south', 59.2753))
-    east = float(request.args.get('east', 15.2134))
-    west = float(request.args.get('west', 15.2134))
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+    if lat and lon:
+        center_lat = float(lat)
+        center_lon = float(lon)
+    else:
+        north = float(request.args.get('north', 59.2753))
+        south = float(request.args.get('south', 59.2753))
+        east = float(request.args.get('east', 15.2134))
+        west = float(request.args.get('west', 15.2134))
+        center_lat = (north + south) / 2
+        center_lon = (east + west) / 2
     
     # Get selected categories from the request
     selected_categories = request.args.get('categories', '').split(',')
@@ -43,11 +50,8 @@ def get_landmarks():
     search_query = request.args.get('search', '').strip()
     logging.debug(f"Search query: {search_query}")
 
-    # Add debug logging for bounding box coordinates
-    logging.debug(f"Bounding box: North: {north}, South: {south}, East: {east}, West: {west}")
-
-    center_lat = (north + south) / 2
-    center_lon = (east + west) / 2
+    # Add debug logging for center coordinates
+    logging.debug(f"Center coordinates: Lat: {center_lat}, Lon: {center_lon}")
 
     # Updated gsradius value to 10000
     url = f"https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord={center_lat}|{center_lon}&gsradius=10000&gslimit=50&format=json"
@@ -70,7 +74,6 @@ def get_landmarks():
             return jsonify([])  # Return an empty list if the response is not as expected
 
         landmarks = []
-        buffer = 0.1  # Add a buffer to make the bounding box check more lenient
         for place in data['query']['geosearch']:
             landmark = {
                 "title": place['title'],
@@ -88,15 +91,11 @@ def get_landmarks():
             landmark['category'] = categorize_landmark(extract)
             logging.debug(f"Categorized {landmark['title']} as {landmark['category']}")
             
-            # Check if the landmark is within the specified bounding box with buffer
-            if (south - buffer) <= landmark['lat'] <= (north + buffer) and (west - buffer) <= landmark['lon'] <= (east + buffer):
-                if not selected_categories or landmark['category'] in selected_categories or (landmark['category'] == "Other" and "Other" in selected_categories):
-                    landmarks.append(landmark)
-                    logging.debug(f"Added landmark: {landmark['title']}")
-                else:
-                    logging.debug(f"Skipped landmark {landmark['title']} due to category filter. Landmark category: {landmark['category']}, Selected categories: {selected_categories}")
+            if not selected_categories or landmark['category'] in selected_categories or (landmark['category'] == "Other" and "Other" in selected_categories):
+                landmarks.append(landmark)
+                logging.debug(f"Added landmark: {landmark['title']}")
             else:
-                logging.debug(f"Skipped landmark {landmark['title']} as it's outside the bounding box")
+                logging.debug(f"Skipped landmark {landmark['title']} due to category filter. Landmark category: {landmark['category']}, Selected categories: {selected_categories}")
 
         logging.debug(f"Returning {len(landmarks)} landmarks")
         return jsonify(landmarks)

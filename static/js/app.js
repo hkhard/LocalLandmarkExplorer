@@ -121,20 +121,21 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add click event listeners to legend items
         document.querySelectorAll('.legend-item').forEach(item => {
             item.addEventListener('click', () => {
-                const category = item.dataset.category;
                 item.classList.toggle('disabled');
                 filterLandmarks();
             });
         });
-        
-        // Call filterLandmarks initially to show all categories
-        filterLandmarks();
     };
 
     const filterLandmarks = () => {
-        const enabledCategories = Array.from(document.querySelectorAll('.legend-item'))
-            .filter(item => !item.classList.contains('disabled'))
+        const enabledCategories = Array.from(document.querySelectorAll('.legend-item:not(.disabled)'))
             .map(item => item.dataset.category);
+        
+        // If all categories are disabled, enable all of them
+        if (enabledCategories.length === 0) {
+            document.querySelectorAll('.legend-item').forEach(item => item.classList.remove('disabled'));
+            enabledCategories.push(...Object.keys(categoryIcons));
+        }
         
         markers.forEach(marker => {
             const category = marker.options.category;

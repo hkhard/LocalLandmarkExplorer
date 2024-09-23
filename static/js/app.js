@@ -1,5 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const map = L.map('map').setView([59.2753, 15.2134], 13);  // Updated to Örebro, Sweden
+    const map = L.map('map', {
+        zoomControl: false  // Disable default zoom control
+    }).setView([59.2753, 15.2134], 13);  // Updated to Örebro, Sweden
+
+    // Add custom zoom control to top-right corner
+    L.control.zoom({
+        position: 'topright'
+    }).addTo(map);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -207,7 +214,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const performSearch = () => {
         const searchQuery = searchInput.value.trim();
         if (searchQuery) {
-            fetchLandmarks(searchQuery);
+            fetchLandmarks(searchQuery).then(() => {
+                // After fetching landmarks, fit the map to the bounds of all markers
+                if (markers.length > 0) {
+                    const group = new L.featureGroup(markers);
+                    map.fitBounds(group.getBounds());
+                }
+            });
             slideoutDrawer.classList.remove('expanded');
         }
     };

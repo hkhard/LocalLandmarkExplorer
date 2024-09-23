@@ -49,13 +49,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    const getSelectedCategories = () => {
+        const checkboxes = document.querySelectorAll('input[name="category"]:checked');
+        return Array.from(checkboxes).map(checkbox => checkbox.value);
+    };
+
     const fetchLandmarks = async () => {
         const bounds = map.getBounds();
+        const selectedCategories = getSelectedCategories();
         const params = new URLSearchParams({
             north: bounds.getNorth(),
             south: bounds.getSouth(),
             east: bounds.getEast(),
-            west: bounds.getWest()
+            west: bounds.getWest(),
+            categories: selectedCategories.join(',')
         });
 
         showLoading();
@@ -159,6 +166,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return div;
     };
     locateControl.addTo(map);
+
+    // Add event listeners for filter checkboxes
+    const filterCheckboxes = document.querySelectorAll('input[name="category"]');
+    filterCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', fetchLandmarks);
+    });
 
     // Initial location request
     locateUser();

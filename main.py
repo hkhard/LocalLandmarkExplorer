@@ -33,11 +33,14 @@ def get_landmarks():
     south = float(request.args.get('south', 59.2753))
     east = float(request.args.get('east', 15.2134))
     west = float(request.args.get('west', 15.2134))
+    
+    # Get selected categories from the request
+    selected_categories = request.args.get('categories', '').split(',')
 
     center_lat = (north + south) / 2
     center_lon = (east + west) / 2
 
-    url = f"https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord={center_lat}|{center_lon}&gsradius=10000&gslimit=10&format=json"
+    url = f"https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord={center_lat}|{center_lon}&gsradius=10000&gslimit=50&format=json"
     response = requests.get(url)
     data = response.json()
 
@@ -59,7 +62,10 @@ def get_landmarks():
         extract = details_data['query']['pages'][str(place['pageid'])]['extract']
         landmark['summary'] = extract[:200] + '...' if len(extract) > 200 else extract
         landmark['category'] = categorize_landmark(extract)
-        landmarks.append(landmark)
+        
+        # Only add the landmark if its category is in the selected categories
+        if not selected_categories or landmark['category'] in selected_categories:
+            landmarks.append(landmark)
 
     logging.debug(f"Returning {len(landmarks)} landmarks")
     return jsonify(landmarks)

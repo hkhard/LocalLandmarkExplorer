@@ -63,13 +63,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const response = await fetch(`/get_landmarks?${params}`);
+            console.log('Response from server:', response);
             if (!response.ok) {
                 throw new Error('Failed to fetch landmarks');
             }
             const landmarks = await response.json();
-            console.log('Fetched landmarks:', landmarks);
+            console.log('Parsed landmarks:', landmarks);
             displayLandmarks(landmarks);
-            // Remove the filterLandmarks() call from here
         } catch (error) {
             console.error('Error fetching landmarks:', error);
             showError('Failed to fetch landmarks. Please try again later.');
@@ -79,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const displayLandmarks = (landmarks) => {
+        console.log('Displaying landmarks:', landmarks);
         markers.forEach(marker => map.removeLayer(marker));
         markers = [];
 
@@ -133,6 +134,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterLandmarks = () => {
         const enabledCategories = Array.from(document.querySelectorAll('.legend-item input[type="checkbox"]:checked'))
             .map(checkbox => checkbox.id);
+        
+        console.log('Filtering landmarks. Enabled categories:', enabledCategories);
         
         markers.forEach(marker => {
             const category = marker.options.category;

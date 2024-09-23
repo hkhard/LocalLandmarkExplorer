@@ -1,10 +1,16 @@
 from flask import Flask, render_template, jsonify, request
 import requests
 import logging
-import re
+import json
+from redis import Redis
+from datetime import timedelta
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
+
+# Set up Redis connection
+redis_client = Redis(host='localhost', port=6379, db=0)
+CACHE_EXPIRATION = timedelta(hours=1)
 
 def categorize_landmark(description):
     categories = {
@@ -48,6 +54,15 @@ def get_landmarks():
     logging.debug(f"Is specific landmark: {is_specific_landmark}")
     logging.debug(f"Center coordinates: Lat: {center_lat}, Lon: {center_lon}")
 
+    # Generate a cache key based on the request parameters
+    cache_key = f"landmarks:{center_lat}:{center_lon}:{search_query}:{is_specific_landmark}"
+
+    # Try to get data from cache
+    cached_data = redis_client.get(cache_key)
+    if cached_data:
+        logging.debug("Returning data from cache")
+        return jsonify(json.loads(cached_data))
+
     url = f"https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord={center_lat}|{center_lon}&gsradius=10000&gslimit=50&format=json"
     
     if search_query:
@@ -57,7 +72,7 @@ def get_landmarks():
     
     try:
         response = requests.get(url)
-        response.raise_for_status()  # Raise an exception for non-200 status codes
+        response.raise_for_status()
         data = response.json()
         
         logging.debug(f"Wikipedia API response status code: {response.status_code}")
@@ -65,7 +80,7 @@ def get_landmarks():
 
         if 'query' not in data or 'geosearch' not in data['query']:
             logging.error(f"Unexpected API response format: {data}")
-            return jsonify([])  # Return an empty list if the response is not as expected
+            return jsonify([])
 
         landmarks = []
         for place in data['query']['geosearch']:
@@ -77,7 +92,6 @@ def get_landmarks():
             }
             logging.debug(f"Processing landmark: {landmark['title']}")
 
-            # If searching for a specific landmark, only return exact matches
             if is_specific_landmark and search_query.lower() != landmark['title'].lower():
                 logging.debug(f"Skipped landmark {landmark['title']} as it's not an exact match")
                 continue
@@ -93,17 +107,20 @@ def get_landmarks():
             landmarks.append(landmark)
             logging.debug(f"Added landmark: {landmark['title']}")
 
-        # If searching for a specific landmark and no exact match was found, return an empty list
         if is_specific_landmark and len(landmarks) == 0:
             logging.debug(f"No exact match found for specific landmark search: {search_query}")
             return jsonify([])
 
         logging.debug(f"Returning {len(landmarks)} landmarks")
+
+        # Cache the results
+        redis_client.setex(cache_key, CACHE_EXPIRATION, json.dumps(landmarks))
+
         return jsonify(landmarks)
     
     except requests.exceptions.RequestException as e:
         logging.error(f"Error fetching data from Wikipedia API: {e}")
-        return jsonify([])  # Return an empty list if there's an error
+        return jsonify([])
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

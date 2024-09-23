@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         "Historical": { icon: "fa-landmark", color: "#FF0000" },
         "Cultural": { icon: "fa-palette", color: "#00FF00" },
         "Natural": { icon: "fa-leaf", color: "#0000FF" },
-        "Educational": { icon: "fa-graduation-cap", color: "#8B4513" }, // Changed from yellow to brown
+        "Educational": { icon: "fa-graduation-cap", color: "#8B4513" },
         "Religious": { icon: "fa-place-of-worship", color: "#FF00FF" },
         "Commercial": { icon: "fa-store", color: "#00FFFF" },
         "Other": { icon: "fa-map-marker-alt", color: "#808080" }
@@ -115,4 +115,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     createLegend();
     fetchLandmarks();
+
+    // Add user location tracking
+    const locateUser = () => {
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    map.setView([latitude, longitude], 13);
+                    L.marker([latitude, longitude], {
+                        icon: L.divIcon({
+                            html: '<i class="fas fa-user fa-2x" style="color: #4a69bd;"></i>',
+                            iconSize: [24, 24],
+                            className: 'custom-icon'
+                        })
+                    }).addTo(map).bindPopup("You are here!").openPopup();
+                },
+                (error) => {
+                    console.error("Error getting user location:", error);
+                    showError("Unable to retrieve your location. Please check your browser settings.");
+                }
+            );
+        } else {
+            showError("Geolocation is not supported by your browser.");
+        }
+    };
+
+    // Create locate button
+    const locateControl = L.control({ position: 'topleft' });
+    locateControl.onAdd = function (map) {
+        const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+        div.innerHTML = '<a class="leaflet-control-locate" href="#" title="Locate Me" role="button" aria-label="Locate Me"><i class="fas fa-location-arrow"></i></a>';
+        div.onclick = locateUser;
+        return div;
+    };
+    locateControl.addTo(map);
+
+    // Initial location request
+    locateUser();
 });

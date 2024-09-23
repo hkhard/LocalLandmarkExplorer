@@ -38,12 +38,25 @@
             margin-right: 8px;
             opacity: 0.7;
         }
+        .leaflet-control-locate {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            background-color: #fff;
+            border-radius: 4px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+        }
+        .leaflet-control-locate:hover {
+            background-color: #f4f4f4;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-4xl font-bold mb-4">Local Landmarks Map</h1>
-        <p class="mb-4">Pan and zoom the map to discover landmarks in different areas. Click on a marker to see more information about the landmark.</p>
+        <p class="mb-4">Pan and zoom the map to discover landmarks in different areas. Click on a marker to see more information about the landmark. Use the locate button to center the map on your current location.</p>
         <div id="error-message" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" style="display: none;" role="alert">
             <span class="block sm:inline" id="error-text"></span>
         </div>

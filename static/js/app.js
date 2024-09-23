@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const map = L.map('map').setView([37.7749, -122.4194], 13);
+    const map = L.map('map').setView([59.2753, 15.2134], 13);  // Updated to Örebro, Sweden
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -31,19 +31,19 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const categoryIcons = {
-        "Historical": "fa-landmark",
-        "Cultural": "fa-palette",
-        "Natural": "fa-leaf",
-        "Educational": "fa-graduation-cap",
-        "Religious": "fa-place-of-worship",
-        "Commercial": "fa-store",
-        "Other": "fa-map-marker-alt"
+        "Historical": { icon: "fa-landmark", color: "#FFA500" },
+        "Cultural": { icon: "fa-palette", color: "#FF69B4" },
+        "Natural": { icon: "fa-leaf", color: "#008000" },
+        "Educational": { icon: "fa-graduation-cap", color: "#4B0082" },
+        "Religious": { icon: "fa-place-of-worship", color: "#800080" },
+        "Commercial": { icon: "fa-store", color: "#1E90FF" },
+        "Other": { icon: "fa-map-marker-alt", color: "#808080" }
     };
 
     const createCustomIcon = (category) => {
-        const iconClass = categoryIcons[category] || categoryIcons["Other"];
+        const { icon, color } = categoryIcons[category] || categoryIcons["Other"];
         return L.divIcon({
-            html: `<i class="fas ${iconClass} fa-2x" style="color: #3388ff;"></i>`,
+            html: `<i class="fas ${icon} fa-2x" style="color: ${color};"></i>`,
             iconSize: [24, 24],
             className: 'custom-icon'
         });
@@ -101,8 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
         legend.onAdd = function(map) {
             const div = L.DomUtil.create('div', 'info legend');
             div.innerHTML = '<h4>Landmark Categories</h4>';
-            for (const [category, iconClass] of Object.entries(categoryIcons)) {
-                div.innerHTML += `<div><i class="fas ${iconClass}"></i> ${category}</div>`;
+            for (const [category, { icon, color }] of Object.entries(categoryIcons)) {
+                div.innerHTML += `<div><i class="fas ${icon}" style="color: ${color};"></i> ${category}</div>`;
             }
             return div;
         };

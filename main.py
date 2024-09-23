@@ -28,10 +28,11 @@ def index():
 
 @app.route('/get_landmarks')
 def get_landmarks():
-    north = float(request.args.get('north', 37.7749))
-    south = float(request.args.get('south', 37.7749))
-    east = float(request.args.get('east', -122.4194))
-    west = float(request.args.get('west', -122.4194))
+    # Updated default coordinates to Örebro, Sweden
+    north = float(request.args.get('north', 59.2753))
+    south = float(request.args.get('south', 59.2753))
+    east = float(request.args.get('east', 15.2134))
+    west = float(request.args.get('west', 15.2134))
 
     center_lat = (north + south) / 2
     center_lon = (east + west) / 2

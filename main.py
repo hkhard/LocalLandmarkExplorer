@@ -30,6 +30,9 @@ def index():
 def get_landmarks():
     lat = request.args.get('lat')
     lon = request.args.get('lon')
+    search_query = request.args.get('search', '').strip()
+    is_specific_landmark = request.args.get('specific', 'false').lower() == 'true'
+
     if lat and lon:
         center_lat = float(lat)
         center_lon = float(lon)
@@ -40,20 +43,11 @@ def get_landmarks():
         west = float(request.args.get('west', 15.2134))
         center_lat = (north + south) / 2
         center_lon = (east + west) / 2
-    
-    # Get selected categories from the request
-    selected_categories = request.args.get('categories', '').split(',')
-    selected_categories = [cat for cat in selected_categories if cat]  # Remove empty strings
-    logging.debug(f"Selected categories: {selected_categories}")
 
-    # Get search query from the request
-    search_query = request.args.get('search', '').strip()
     logging.debug(f"Search query: {search_query}")
-
-    # Add debug logging for center coordinates
+    logging.debug(f"Is specific landmark: {is_specific_landmark}")
     logging.debug(f"Center coordinates: Lat: {center_lat}, Lon: {center_lon}")
 
-    # Updated gsradius value to 10000
     url = f"https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord={center_lat}|{center_lon}&gsradius=10000&gslimit=50&format=json"
     
     if search_query:
@@ -83,6 +77,11 @@ def get_landmarks():
             }
             logging.debug(f"Processing landmark: {landmark['title']}")
 
+            # If searching for a specific landmark, only return exact matches
+            if is_specific_landmark and search_query.lower() != landmark['title'].lower():
+                logging.debug(f"Skipped landmark {landmark['title']} as it's not an exact match")
+                continue
+
             details_url = f"https://en.wikipedia.org/w/api.php?action=query&pageids={place['pageid']}&prop=extracts&exintro&format=json&explaintext"
             details_response = requests.get(details_url)
             details_data = details_response.json()
@@ -91,11 +90,13 @@ def get_landmarks():
             landmark['category'] = categorize_landmark(extract)
             logging.debug(f"Categorized {landmark['title']} as {landmark['category']}")
             
-            if not selected_categories or landmark['category'] in selected_categories or (landmark['category'] == "Other" and "Other" in selected_categories):
-                landmarks.append(landmark)
-                logging.debug(f"Added landmark: {landmark['title']}")
-            else:
-                logging.debug(f"Skipped landmark {landmark['title']} due to category filter. Landmark category: {landmark['category']}, Selected categories: {selected_categories}")
+            landmarks.append(landmark)
+            logging.debug(f"Added landmark: {landmark['title']}")
+
+        # If searching for a specific landmark and no exact match was found, return an empty list
+        if is_specific_landmark and len(landmarks) == 0:
+            logging.debug(f"No exact match found for specific landmark search: {search_query}")
+            return jsonify([])
 
         logging.debug(f"Returning {len(landmarks)} landmarks")
         return jsonify(landmarks)

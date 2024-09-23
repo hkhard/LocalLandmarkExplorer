@@ -56,23 +56,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const fetchLandmarks = async (searchQuery = '', center = null) => {
-        let params;
+    const fetchLandmarks = async (searchQuery = '', center = null, isSpecificLandmark = false) => {
+        let params = new URLSearchParams({
+            search: searchQuery,
+            specific: isSpecificLandmark
+        });
+
         if (center) {
-            params = new URLSearchParams({
-                lat: center.lat,
-                lon: center.lng,
-                search: searchQuery
-            });
+            params.append('lat', center.lat);
+            params.append('lon', center.lng);
         } else {
             const bounds = map.getBounds();
-            params = new URLSearchParams({
-                north: bounds.getNorth(),
-                south: bounds.getSouth(),
-                east: bounds.getEast(),
-                west: bounds.getWest(),
-                search: searchQuery
-            });
+            params.append('north', bounds.getNorth());
+            params.append('south', bounds.getSouth());
+            params.append('east', bounds.getEast());
+            params.append('west', bounds.getWest());
         }
 
         showLoading();
@@ -224,17 +222,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const searchQuery = searchInput.value.trim();
         if (searchQuery) {
             // Use OpenStreetMap Nominatim for geocoding
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`)
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.length > 0) {
-                        const { lat, lon, boundingbox } = data[0];
+                        const { lat, lon, boundingbox, type } = data[0];
+                        const isSpecificLandmark = type !== 'city' && type !== 'administrative';
                         const southWest = L.latLng(boundingbox[0], boundingbox[2]);
                         const northEast = L.latLng(boundingbox[1], boundingbox[3]);
                         const bounds = L.latLngBounds(southWest, northEast);
                         
                         map.fitBounds(bounds);
-                        fetchLandmarks(searchQuery, { lat, lng: lon }).then(() => {
+                        fetchLandmarks(searchQuery, { lat, lng: lon }, isSpecificLandmark).then(() => {
                             if (markers.length > 0) {
                                 const group = new L.featureGroup(markers);
                                 map.fitBounds(group.getBounds());

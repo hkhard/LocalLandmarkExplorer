@@ -34,10 +34,10 @@ document.addEventListener('DOMContentLoaded', () => {
         "Historical": { icon: "fa-landmark", color: "#FF0000" },
         "Cultural": { icon: "fa-palette", color: "#00FF00" },
         "Natural": { icon: "fa-leaf", color: "#0000FF" },
-        "Educational": { icon: "fa-graduation-cap", color: "#FFFF00" },
+        "Educational": { icon: "fa-graduation-cap", color: "#8B4513" }, // Changed from yellow to brown
         "Religious": { icon: "fa-place-of-worship", color: "#FF00FF" },
         "Commercial": { icon: "fa-store", color: "#00FFFF" },
-        "Other": { icon: "fa-map-marker-alt", color: "#808080" } // Changed from white to gray
+        "Other": { icon: "fa-map-marker-alt", color: "#808080" }
     };
 
     const createCustomIcon = (category) => {

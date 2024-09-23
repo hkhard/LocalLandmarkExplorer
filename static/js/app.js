@@ -41,12 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const createCustomIcon = (category) => {
-        const { color } = categoryIcons[category] || categoryIcons["Other"];
+        const { icon, color } = categoryIcons[category] || categoryIcons["Other"];
         return L.divIcon({
-            html: `<div class="pin" style="background-color: ${color};"></div>`,
-            iconSize: [30, 40], // Adjusted size to match the new pin design
-            iconAnchor: [15, 40],
-            popupAnchor: [0, -40],
+            html: `<i class="fas ${icon} fa-2x" style="color: ${color};"></i>`,
+            iconSize: [24, 24],
             className: 'custom-icon'
         });
     };

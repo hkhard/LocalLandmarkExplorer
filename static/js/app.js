@@ -49,20 +49,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const getSelectedCategories = () => {
-        const checkboxes = document.querySelectorAll('input[name="category"]:checked');
-        return Array.from(checkboxes).map(checkbox => checkbox.value);
-    };
-
     const fetchLandmarks = async () => {
         const bounds = map.getBounds();
-        const selectedCategories = getSelectedCategories();
         const params = new URLSearchParams({
             north: bounds.getNorth(),
             south: bounds.getSouth(),
             east: bounds.getEast(),
-            west: bounds.getWest(),
-            categories: selectedCategories.join(',')
+            west: bounds.getWest()
         });
 
         showLoading();
@@ -90,7 +83,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         landmarks.forEach(landmark => {
             console.log(`Creating marker for ${landmark.title}: lat ${landmark.lat}, lon ${landmark.lon}, category ${landmark.category}`);
-            const marker = L.marker([landmark.lat, landmark.lon], {icon: createCustomIcon(landmark.category)}).addTo(map);
+            const marker = L.marker([landmark.lat, landmark.lon], {
+                icon: createCustomIcon(landmark.category),
+                category: landmark.category
+            }).addTo(map);
             marker.bindPopup(`
                 <b>${landmark.title}</b><br>
                 ${landmark.summary}<br>
@@ -98,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `);
             markers.push(marker);
         });
+        filterLandmarks();
     };
 
     const debounceFetchLandmarks = () => {
@@ -113,11 +110,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const div = L.DomUtil.create('div', 'info legend');
             div.innerHTML = '<h4>Landmark Categories</h4>';
             for (const [category, { icon, color }] of Object.entries(categoryIcons)) {
-                div.innerHTML += `<div><i class="fas ${icon}" style="color: ${color};"></i> ${category}</div>`;
+                div.innerHTML += `<div class="legend-item" data-category="${category}">
+                    <i class="fas ${icon}" style="color: ${color};"></i> ${category}
+                </div>`;
             }
             return div;
         };
         legend.addTo(map);
+        
+        // Add click event listeners to legend items
+        document.querySelectorAll('.legend-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const category = item.dataset.category;
+                item.classList.toggle('disabled');
+                filterLandmarks();
+            });
+        });
+    };
+
+    const filterLandmarks = () => {
+        const enabledCategories = Array.from(document.querySelectorAll('.legend-item:not(.disabled)'))
+            .map(item => item.dataset.category);
+        
+        markers.forEach(marker => {
+            const category = marker.options.category;
+            if (enabledCategories.includes(category)) {
+                map.addLayer(marker);
+            } else {
+                map.removeLayer(marker);
+            }
+        });
     };
 
     createLegend();
@@ -166,12 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return div;
     };
     locateControl.addTo(map);
-
-    // Add event listeners for filter checkboxes
-    const filterCheckboxes = document.querySelectorAll('input[name="category"]');
-    filterCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', fetchLandmarks);
-    });
 
     // Initial location request
     locateUser();

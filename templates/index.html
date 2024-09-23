@@ -51,6 +51,13 @@
         .leaflet-control-locate:hover {
             background-color: #f4f4f4;
         }
+        .legend-item {
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        .legend-item.disabled {
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -59,39 +66,6 @@
         <p class="mb-4">Pan and zoom the map to discover landmarks in different areas. Click on a marker to see more information about the landmark. Use the locate button to center the map on your current location.</p>
         <div id="error-message" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" style="display: none;" role="alert">
             <span class="block sm:inline" id="error-text"></span>
-        </div>
-        <div class="mb-4">
-            <h2 class="text-xl font-semibold mb-2">Filter Landmarks:</h2>
-            <div id="filters" class="flex flex-wrap gap-2">
-                <label class="inline-flex items-center">
-                    <input type="checkbox" class="form-checkbox" name="category" value="Historical" checked>
-                    <span class="ml-2">Historical</span>
-                </label>
-                <label class="inline-flex items-center">
-                    <input type="checkbox" class="form-checkbox" name="category" value="Cultural" checked>
-                    <span class="ml-2">Cultural</span>
-                </label>
-                <label class="inline-flex items-center">
-                    <input type="checkbox" class="form-checkbox" name="category" value="Natural" checked>
-                    <span class="ml-2">Natural</span>
-                </label>
-                <label class="inline-flex items-center">
-                    <input type="checkbox" class="form-checkbox" name="category" value="Educational" checked>
-                    <span class="ml-2">Educational</span>
-                </label>
-                <label class="inline-flex items-center">
-                    <input type="checkbox" class="form-checkbox" name="category" value="Religious" checked>
-                    <span class="ml-2">Religious</span>
-                </label>
-                <label class="inline-flex items-center">
-                    <input type="checkbox" class="form-checkbox" name="category" value="Commercial" checked>
-                    <span class="ml-2">Commercial</span>
-                </label>
-                <label class="inline-flex items-center">
-                    <input type="checkbox" class="form-checkbox" name="category" value="Other" checked>
-                    <span class="ml-2">Other</span>
-                </label>
-            </div>
         </div>
         <div class="relative">
             <div id="map" class="rounded-lg shadow-lg"></div>

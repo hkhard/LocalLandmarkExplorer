@@ -116,13 +116,21 @@ document.addEventListener('DOMContentLoaded', () => {
     createLegend();
     fetchLandmarks();
 
-    // Add user location tracking
+    // New function to calculate midpoint
+    const calculateMidpoint = (userLat, userLon, landmarksLat, landmarksLon) => {
+        return [(userLat + landmarksLat) / 2, (userLon + landmarksLon) / 2];
+    };
+
+    // Updated user location tracking
     const locateUser = () => {
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
-                    map.setView([latitude, longitude], 13);
+                    const initialLandmarksLat = 59.2753; // Örebro, Sweden
+                    const initialLandmarksLon = 15.2134;
+                    const midpoint = calculateMidpoint(latitude, longitude, initialLandmarksLat, initialLandmarksLon);
+                    map.setView(midpoint, 10); // Adjust zoom level as needed
                     L.marker([latitude, longitude], {
                         icon: L.divIcon({
                             html: '<i class="fas fa-user fa-2x" style="color: #4a69bd;"></i>',
@@ -130,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             className: 'custom-icon'
                         })
                     }).addTo(map).bindPopup("You are here!").openPopup();
+                    fetchLandmarks(); // Fetch landmarks for the new view
                 },
                 (error) => {
                     console.error("Error getting user location:", error);
@@ -141,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Create locate button
+    // Create locate button (already in the top-left corner)
     const locateControl = L.control({ position: 'topleft' });
     locateControl.onAdd = function (map) {
         const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');

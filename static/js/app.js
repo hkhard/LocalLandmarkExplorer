@@ -1,16 +1,54 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize the map
-    const map = L.map('map').setView([0, 0], 2);
+    const map = L.map('map').setView([37.7749, -122.4194], 13);
 
-    // Add the OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
     let markers = [];
+    let fetchTimer = null;
 
-    // Function to fetch landmarks
+    const loadingIndicator = document.getElementById('loading');
+    const errorMessage = document.getElementById('error-message');
+    const errorText = document.getElementById('error-text');
+
+    const showLoading = () => {
+        loadingIndicator.style.display = 'block';
+    };
+
+    const hideLoading = () => {
+        loadingIndicator.style.display = 'none';
+    };
+
+    const showError = (message) => {
+        errorText.textContent = message;
+        errorMessage.style.display = 'block';
+    };
+
+    const hideError = () => {
+        errorMessage.style.display = 'none';
+    };
+
+    const categoryIcons = {
+        "Historical": "fa-landmark",
+        "Cultural": "fa-palette",
+        "Natural": "fa-leaf",
+        "Educational": "fa-graduation-cap",
+        "Religious": "fa-place-of-worship",
+        "Commercial": "fa-store",
+        "Other": "fa-map-marker-alt"
+    };
+
+    const createCustomIcon = (category) => {
+        const iconClass = categoryIcons[category] || categoryIcons["Other"];
+        return L.divIcon({
+            html: `<i class="fas ${iconClass} fa-2x" style="color: #3388ff;"></i>`,
+            iconSize: [24, 24],
+            className: 'custom-icon'
+        });
+    };
+
     const fetchLandmarks = async () => {
         const bounds = map.getBounds();
         const params = new URLSearchParams({
@@ -20,31 +58,57 @@ document.addEventListener('DOMContentLoaded', () => {
             west: bounds.getWest()
         });
 
+        showLoading();
+        hideError();
+
         try {
             const response = await fetch(`/get_landmarks?${params}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch landmarks');
+            }
             const landmarks = await response.json();
+            console.log('Fetched landmarks:', landmarks);
             displayLandmarks(landmarks);
         } catch (error) {
             console.error('Error fetching landmarks:', error);
+            showError('Failed to fetch landmarks. Please try again later.');
+        } finally {
+            hideLoading();
         }
     };
 
-    // Function to display landmarks on the map
     const displayLandmarks = (landmarks) => {
-        // Clear existing markers
         markers.forEach(marker => map.removeLayer(marker));
         markers = [];
 
         landmarks.forEach(landmark => {
-            const marker = L.marker([landmark.lat, landmark.lon]).addTo(map);
-            marker.bindPopup(`<b>${landmark.title}</b><br>${landmark.summary}`);
+            console.log(`Creating marker for ${landmark.title}: lat ${landmark.lat}, lon ${landmark.lon}, category ${landmark.category}`);
+            const marker = L.marker([landmark.lat, landmark.lon], {icon: createCustomIcon(landmark.category)}).addTo(map);
+            marker.bindPopup(`<b>${landmark.title}</b><br>${landmark.summary}<br><i>Category: ${landmark.category}</i>`);
             markers.push(marker);
         });
     };
 
-    // Fetch landmarks when the map is moved or zoomed
-    map.on('moveend', fetchLandmarks);
+    const debounceFetchLandmarks = () => {
+        clearTimeout(fetchTimer);
+        fetchTimer = setTimeout(fetchLandmarks, 300);
+    };
 
-    // Initial fetch of landmarks
+    map.on('moveend', debounceFetchLandmarks);
+
+    const createLegend = () => {
+        const legend = L.control({position: 'bottomright'});
+        legend.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'info legend');
+            div.innerHTML = '<h4>Landmark Categories</h4>';
+            for (const [category, iconClass] of Object.entries(categoryIcons)) {
+                div.innerHTML += `<div><i class="fas ${iconClass}"></i> ${category}</div>`;
+            }
+            return div;
+        };
+        legend.addTo(map);
+    };
+
+    createLegend();
     fetchLandmarks();
 });

@@ -198,23 +198,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial location request
     locateUser();
 
-    // Add event listener for search button
-    const searchButton = document.getElementById('search-button');
+    // New search functionality
+    const searchIcon = document.getElementById('search-icon');
+    const searchBox = document.getElementById('search-box');
     const searchInput = document.getElementById('search-input');
 
-    searchButton.addEventListener('click', () => {
-        const searchQuery = searchInput.value.trim();
-        if (searchQuery) {
-            fetchLandmarks(searchQuery);
+    searchIcon.addEventListener('click', () => {
+        searchBox.classList.toggle('hidden');
+        if (!searchBox.classList.contains('hidden')) {
+            searchInput.focus();
         }
     });
 
-    // Add event listener for Enter key in search input
     searchInput.addEventListener('keyup', (event) => {
         if (event.key === 'Enter') {
             const searchQuery = searchInput.value.trim();
             if (searchQuery) {
                 fetchLandmarks(searchQuery);
+                searchBox.classList.add('hidden');
             }
         }
     });

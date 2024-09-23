@@ -185,43 +185,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Create locate button with combined search functionality
-    const locateControl = L.control({ position: 'topleft' });
-    locateControl.onAdd = function (map) {
-        const div = L.DomUtil.create('div', 'leaflet-control-locate-container leaflet-bar leaflet-control');
-        div.innerHTML = `
-          <button id="locate-search-btn" class="leaflet-control-locate" title="Locate Me / Search">
-            <i class="fas fa-location-arrow"></i>
-          </button>
-          <div id="search-box" class="hidden">
-            <input type="text" id="search-input" placeholder="Search landmarks...">
-            <button id="search-submit"><i class="fas fa-search"></i></button>
-          </div>
-        `;
-        return div;
-    };
-    locateControl.addTo(map);
-
-    // Add event listeners for the new combined functionality
-    const locateSearchBtn = document.getElementById('locate-search-btn');
+    // New slideout drawer functionality
+    const slideoutDrawer = document.getElementById('slideout-drawer');
+    const searchIcon = document.getElementById('search-icon');
+    const locateIcon = document.getElementById('locate-icon');
     const searchBox = document.getElementById('search-box');
     const searchInput = document.getElementById('search-input');
     const searchSubmit = document.getElementById('search-submit');
 
-    locateSearchBtn.addEventListener('click', () => {
-        searchBox.classList.toggle('hidden');
-        if (!searchBox.classList.contains('hidden')) {
+    searchIcon.addEventListener('click', () => {
+        slideoutDrawer.classList.toggle('expanded');
+        if (slideoutDrawer.classList.contains('expanded')) {
             searchInput.focus();
-        } else {
-            locateUser();
         }
+    });
+
+    locateIcon.addEventListener('click', () => {
+        locateUser();
     });
 
     const performSearch = () => {
         const searchQuery = searchInput.value.trim();
         if (searchQuery) {
             fetchLandmarks(searchQuery);
-            searchBox.classList.add('hidden');
+            slideoutDrawer.classList.remove('expanded');
         }
     };
 

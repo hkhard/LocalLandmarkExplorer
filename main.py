@@ -3,24 +3,57 @@ import requests
 import logging
 import json
 import hashlib
-import pickle
+import os
+import time
 from functools import lru_cache
+import threading
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
+
+CACHE_DIR = 'landmark_cache'
+CACHE_EXPIRATION = 3600  # 1 hour
+
+if not os.path.exists(CACHE_DIR):
+    os.makedirs(CACHE_DIR)
 
 def generate_cache_key(params):
     param_string = json.dumps(params, sort_keys=True)
     return hashlib.md5(param_string.encode()).hexdigest()
 
+def get_file_cache_path(cache_key):
+    return os.path.join(CACHE_DIR, f"{cache_key}.json")
+
 @lru_cache(maxsize=100)
 def get_cached_landmarks(cache_key):
+    # Check memory cache first
+    mem_cache = get_cached_landmarks.cache_get(cache_key)
+    if mem_cache is not None:
+        return json.loads(mem_cache)
+    
+    # Check file cache if not in memory
+    file_path = get_file_cache_path(cache_key)
+    if os.path.exists(file_path):
+        if time.time() - os.path.getmtime(file_path) < CACHE_EXPIRATION:
+            with open(file_path, 'r') as f:
+                return json.load(f)
+        else:
+            os.remove(file_path)  # Remove expired cache file
+    
     return None
 
 def set_cached_landmarks(cache_key, data):
+    # Set memory cache
+    json_data = json.dumps(data)
     get_cached_landmarks.cache_clear()
     get_cached_landmarks(cache_key)
-    return pickle.dumps(data)
+    
+    # Set file cache
+    file_path = get_file_cache_path(cache_key)
+    with open(file_path, 'w') as f:
+        f.write(json_data)
+    
+    return json_data
 
 def categorize_landmark(description):
     categories = {
@@ -60,7 +93,7 @@ def get_landmarks():
 
     if cached_data is not None:
         logging.debug("Returning data from cache")
-        return jsonify(pickle.loads(cached_data))
+        return jsonify(cached_data)
 
     if params['lat'] and params['lon']:
         center_lat = float(params['lat'])
@@ -139,7 +172,26 @@ def get_landmarks():
 @app.route('/clear_cache')
 def clear_cache():
     get_cached_landmarks.cache_clear()
+    for filename in os.listdir(CACHE_DIR):
+        file_path = os.path.join(CACHE_DIR, filename)
+        os.remove(file_path)
     return jsonify({"message": "Cache cleared"})
+
+def cleanup_cache():
+    current_time = time.time()
+    for filename in os.listdir(CACHE_DIR):
+        file_path = os.path.join(CACHE_DIR, filename)
+        if current_time - os.path.getmtime(file_path) > CACHE_EXPIRATION:
+            os.remove(file_path)
+
+def run_cleanup():
+    while True:
+        time.sleep(3600)  # Sleep for 1 hour
+        cleanup_cache()
+
+cleanup_thread = threading.Thread(target=run_cleanup)
+cleanup_thread.daemon = True
+cleanup_thread.start()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

@@ -62,29 +62,33 @@
         .legend-item.disabled i {
             opacity: 0.5;
         }
-        .search-container {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 1000;
-        }
-        #search-icon {
-            background-color: white;
-            border: none;
-            border-radius: 50%;
-            padding: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            cursor: pointer;
+        .leaflet-control-locate-container {
+            position: relative;
         }
         #search-box {
             position: absolute;
-            left: 40px;
+            left: 34px;
             top: 0;
+            display: flex;
             transition: all 0.3s ease;
         }
         #search-box.hidden {
-            opacity: 0;
-            visibility: hidden;
+            width: 0;
+            overflow: hidden;
+        }
+        #search-input {
+            width: 200px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px 0 0 4px;
+        }
+        #search-submit {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-left: none;
+            border-radius: 0 4px 4px 0;
+            padding: 5px 10px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -96,14 +100,6 @@
             <span class="block sm:inline" id="error-text"></span>
         </div>
         <div class="relative">
-            <div class="search-container absolute top-4 left-4 z-10">
-                <button id="search-icon" class="bg-white p-2 rounded-full shadow-md">
-                    <i class="fas fa-search text-gray-600"></i>
-                </button>
-                <div id="search-box" class="hidden">
-                    <input type="text" id="search-input" class="w-64 px-3 py-2 border border-gray-300 rounded-md" placeholder="Search for landmarks or locations">
-                </div>
-            </div>
             <div id="map" class="rounded-lg shadow-lg"></div>
             <div id="loading" class="text-center">
                 <svg class="animate-spin h-8 w-8 mx-auto text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

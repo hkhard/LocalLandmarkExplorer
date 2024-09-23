@@ -185,38 +185,53 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Create locate button (already in the top-left corner)
+    // Create locate button with combined search functionality
     const locateControl = L.control({ position: 'topleft' });
     locateControl.onAdd = function (map) {
-        const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-        div.innerHTML = '<a class="leaflet-control-locate" href="#" title="Locate Me" role="button" aria-label="Locate Me"><i class="fas fa-location-arrow"></i></a>';
-        div.onclick = locateUser;
+        const div = L.DomUtil.create('div', 'leaflet-control-locate-container leaflet-bar leaflet-control');
+        div.innerHTML = `
+          <button id="locate-search-btn" class="leaflet-control-locate" title="Locate Me / Search">
+            <i class="fas fa-location-arrow"></i>
+          </button>
+          <div id="search-box" class="hidden">
+            <input type="text" id="search-input" placeholder="Search landmarks...">
+            <button id="search-submit"><i class="fas fa-search"></i></button>
+          </div>
+        `;
         return div;
     };
     locateControl.addTo(map);
 
-    // Initial location request
-    locateUser();
-
-    // New search functionality
-    const searchIcon = document.getElementById('search-icon');
+    // Add event listeners for the new combined functionality
+    const locateSearchBtn = document.getElementById('locate-search-btn');
     const searchBox = document.getElementById('search-box');
     const searchInput = document.getElementById('search-input');
+    const searchSubmit = document.getElementById('search-submit');
 
-    searchIcon.addEventListener('click', () => {
+    locateSearchBtn.addEventListener('click', () => {
         searchBox.classList.toggle('hidden');
         if (!searchBox.classList.contains('hidden')) {
             searchInput.focus();
+        } else {
+            locateUser();
         }
     });
 
+    const performSearch = () => {
+        const searchQuery = searchInput.value.trim();
+        if (searchQuery) {
+            fetchLandmarks(searchQuery);
+            searchBox.classList.add('hidden');
+        }
+    };
+
+    searchSubmit.addEventListener('click', performSearch);
     searchInput.addEventListener('keyup', (event) => {
         if (event.key === 'Enter') {
-            const searchQuery = searchInput.value.trim();
-            if (searchQuery) {
-                fetchLandmarks(searchQuery);
-                searchBox.classList.add('hidden');
-            }
+            performSearch();
         }
     });
+
+    // Initial location request
+    locateUser();
 });

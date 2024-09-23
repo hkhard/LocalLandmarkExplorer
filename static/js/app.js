@@ -37,16 +37,16 @@ document.addEventListener('DOMContentLoaded', () => {
         "Educational": { icon: "fa-graduation-cap", color: "#FFFF00" },
         "Religious": { icon: "fa-place-of-worship", color: "#FF00FF" },
         "Commercial": { icon: "fa-store", color: "#00FFFF" },
-        "Other": { icon: "fa-map-marker-alt", color: "#FFFFFF" }
+        "Other": { icon: "fa-map-marker-alt", color: "#808080" } // Changed from white to gray
     };
 
     const createCustomIcon = (category) => {
         const { color } = categoryIcons[category] || categoryIcons["Other"];
         return L.divIcon({
             html: `<div class="pin" style="background-color: ${color};"></div>`,
-            iconSize: [30, 30],
-            iconAnchor: [15, 30],
-            popupAnchor: [0, -30],
+            iconSize: [30, 40], // Adjusted size to match the new pin design
+            iconAnchor: [15, 40],
+            popupAnchor: [0, -40],
             className: 'custom-icon'
         });
     };

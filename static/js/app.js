@@ -49,13 +49,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const fetchLandmarks = async () => {
+    const fetchLandmarks = async (searchQuery = '') => {
         const bounds = map.getBounds();
         const params = new URLSearchParams({
             north: bounds.getNorth(),
             south: bounds.getSouth(),
             east: bounds.getEast(),
-            west: bounds.getWest()
+            west: bounds.getWest(),
+            search: searchQuery
         });
 
         showLoading();
@@ -196,4 +197,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial location request
     locateUser();
+
+    // Add event listener for search button
+    const searchButton = document.getElementById('search-button');
+    const searchInput = document.getElementById('search-input');
+
+    searchButton.addEventListener('click', () => {
+        const searchQuery = searchInput.value.trim();
+        if (searchQuery) {
+            fetchLandmarks(searchQuery);
+        }
+    });
+
+    // Add event listener for Enter key in search input
+    searchInput.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') {
+            const searchQuery = searchInput.value.trim();
+            if (searchQuery) {
+                fetchLandmarks(searchQuery);
+            }
+        }
+    });
 });

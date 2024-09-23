@@ -39,6 +39,10 @@ def get_landmarks():
     selected_categories = [cat for cat in selected_categories if cat]  # Remove empty strings
     logging.debug(f"Selected categories: {selected_categories}")
 
+    # Get search query from the request
+    search_query = request.args.get('search', '').strip()
+    logging.debug(f"Search query: {search_query}")
+
     # Add debug logging for bounding box coordinates
     logging.debug(f"Bounding box: North: {north}, South: {south}, East: {east}, West: {west}")
 
@@ -47,6 +51,9 @@ def get_landmarks():
 
     # Updated gsradius value to 10000
     url = f"https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord={center_lat}|{center_lon}&gsradius=10000&gslimit=50&format=json"
+    
+    if search_query:
+        url += f"&gsearch={search_query}"
     
     logging.debug(f"Sending request to Wikipedia API: {url}")
     

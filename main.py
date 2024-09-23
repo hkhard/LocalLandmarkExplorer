@@ -26,12 +26,7 @@ def get_file_cache_path(cache_key):
 
 @lru_cache(maxsize=100)
 def get_cached_landmarks(cache_key):
-    # Check memory cache first
-    mem_cache = get_cached_landmarks.cache_get(cache_key)
-    if mem_cache is not None:
-        return json.loads(mem_cache)
-    
-    # Check file cache if not in memory
+    # Check file cache
     file_path = get_file_cache_path(cache_key)
     if os.path.exists(file_path):
         if time.time() - os.path.getmtime(file_path) < CACHE_EXPIRATION:
@@ -39,21 +34,18 @@ def get_cached_landmarks(cache_key):
                 return json.load(f)
         else:
             os.remove(file_path)  # Remove expired cache file
-    
     return None
 
 def set_cached_landmarks(cache_key, data):
-    # Set memory cache
-    json_data = json.dumps(data)
-    get_cached_landmarks.cache_clear()
-    get_cached_landmarks(cache_key)
-    
     # Set file cache
     file_path = get_file_cache_path(cache_key)
     with open(file_path, 'w') as f:
-        f.write(json_data)
+        json.dump(data, f)
     
-    return json_data
+    # Clear the lru_cache to ensure it picks up the new file cache
+    get_cached_landmarks.cache_clear()
+    
+    return data
 
 def categorize_landmark(description):
     categories = {

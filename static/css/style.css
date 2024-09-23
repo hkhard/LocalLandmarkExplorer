@@ -1,0 +1,4 @@
+/* Additional custom styles can be added here */
+#map {
+    min-height: 400px;
+}

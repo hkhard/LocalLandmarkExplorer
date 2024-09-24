@@ -1,0 +1,16 @@
+# Ignore the contents of the landmark_cache folder
+landmark_cache/
+
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+
+# Ignore environment-specific files
+.env
+
+# Ignore log files
+*.log
+
+# Ignore system files
+.DS_Store
+Thumbs.db
